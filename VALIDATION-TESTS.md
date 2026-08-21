@@ -4,7 +4,7 @@ Test cases for the "Build own Architecture" flow and its validation engine.
 
 - **Target:** `KEOS-Architecture-standalone 1.html`
 - **Run:** serve the file, **hard-reload the page**, paste the harness (§5) into the DevTools console, run `KEOS_TEST()`
-- **Last run:** 21/21 passing
+- **Last run:** 24/24 passing
 
 > **Run on a freshly loaded page.** Architectures and catalog descriptions live in memory for the session. Running the suite over a page you have already been clicking around in will leak state and produce false failures.
 
@@ -90,6 +90,16 @@ Each name resolves against the catalog to find its canonical category.
 | TC-19 | Same | Advisory echoes the description you entered | ✅ echoed |
 | TC-20 | One mismatch **and** one custom component | 1 risk + 1 custom advisory, independent | ✅ 1 / 1 |
 | TC-21 | Fix action offered for a custom component | **Review** (`prune`), not move | ✅ prune |
+
+### KEOS Context (Layer 04 — Memory) rules
+
+Per `KEOS-Memory-Validation-Spec.md` §5.
+
+| ID | Scenario | Expected | Result |
+|---|---|---|---|
+| TC-22 | Empty **Compliance & PII** with memory/session present (A-MEM-05) | Advisory: interaction history stored with no PII control | ✅ |
+| TC-23 | Empty **Data Quality Guards** with a feature store present (A-MEM-06) | Advisory: stale/drifted features undetected | ✅ |
+| TC-24 | Same component name in both **Agent Memory** and **Session / KV Store** (R-MEM-02) | Risk: durable memory and disposable session state must not share one instance | ✅ |
 
 ### Advisories
 
@@ -236,6 +246,16 @@ window.KEOS_TEST = function(){
     addCustom('Authentication & Authorization','Acme Broker','Brokers entitlement checks.');
     const iss=validateAll().filter(i=>/Acme Broker/.test(i.msg))[0];
     return {pass: iss && iss.fix && iss.fix.kind==='prune', detail: iss?iss.fix.kind:'none'}; });
+
+  t('TC-22','A-MEM-05: memory/session with no PII control', ()=>{ reset();
+    pathTarget(P('Compliance & PII')).length = 0;
+    return {pass:/no PII control in the architecture/.test(warns().map(i=>i.msg).join('|'))}; });
+  t('TC-23','A-MEM-06: feature store with no data quality guard', ()=>{ reset();
+    pathTarget(P('Data Quality Guards')).length = 0;
+    return {pass:/feature\/context store is defined with no data quality guards/.test(warns().map(i=>i.msg).join('|'))}; });
+  t('TC-24','R-MEM-02: same store backs memory and session state', ()=>{ reset();
+    pathTarget(P('Session / KV Store')).push(T('Mem0'));
+    return {pass:/backs both Agent Memory and Session \/ KV Store/.test(risks().map(i=>i.msg).join('|'))}; });
 
   customArchs=customArchs.filter(x=>x.id!==a.id);
   current='aws'; editMode=false; render();
