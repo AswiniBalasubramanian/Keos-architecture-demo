@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "keos-architecture",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", ".", "-l", "5199"],
+      "port": 5199
+    }
+  ]
+}
